@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mock:api": "json-server --watch db.json --port 3001"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -75,6 +76,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "json-server": "1.0.0-beta.3",
     "tw-animate-css": "^1.2.9",
     "vite": "^6.3.5"
   },

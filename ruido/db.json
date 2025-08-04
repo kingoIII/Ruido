@@ -1,0 +1,153 @@
+{
+  "samples": [
+    {
+      "id": "1",
+      "title": "Dark Kick 01",
+      "artist": "Producer X",
+      "filename": "Dark_Kick_01.wav",
+      "duration": 3,
+      "bpm": 140,
+      "key": "Am",
+      "genre": "Trap",
+      "tags": ["kick", "dark", "trap"],
+      "description": "A hard-hitting kick drum for modern trap productions.",
+      "audio_url": "/audio/Dark_Kick_01.wav",
+      "waveform_url": "/waveforms/Dark_Kick_01.json",
+      "user_id": "1",
+      "is_public": true,
+      "download_count": 123,
+      "favorite_count": 45
+    },
+    {
+      "id": "2",
+      "title": "Synth Lead Melody",
+      "artist": "Synth Master",
+      "filename": "Synth_Lead_Melody.wav",
+      "duration": 8,
+      "bpm": 128,
+      "key": "C",
+      "genre": "Future Bass",
+      "tags": ["synth", "lead", "melody", "future bass"],
+      "description": "A catchy synth lead for future bass tracks.",
+      "audio_url": "/audio/Synth_Lead_Melody.wav",
+      "waveform_url": "/waveforms/Synth_Lead_Melody.json",
+      "user_id": "2",
+      "is_public": true,
+      "download_count": 234,
+      "favorite_count": 67
+    },
+    {
+      "id": "3",
+      "title": "Trap Snare Heavy",
+      "artist": "Producer X",
+      "filename": "Trap_Snare_Heavy.wav",
+      "duration": 2,
+      "bpm": 150,
+      "key": "-",
+      "genre": "Trap",
+      "tags": ["snare", "heavy", "trap"],
+      "description": "A heavy snare for trap and hip hop.",
+      "audio_url": "/audio/Trap_Snare_Heavy.wav",
+      "waveform_url": "/waveforms/Trap_Snare_Heavy.json",
+      "user_id": "1",
+      "is_public": true,
+      "download_count": 345,
+      "favorite_count": 89
+    },
+    {
+      "id": "4",
+      "title": "Bass Drop Future",
+      "artist": "Synth Master",
+      "filename": "Bass_Drop_Future.wav",
+      "duration": 5,
+      "bpm": 135,
+      "key": "F#m",
+      "genre": "Future Bass",
+      "tags": ["bass", "drop", "future bass"],
+      "description": "A powerful bass drop for future bass bangers.",
+      "audio_url": "/audio/Bass_Drop_Future.wav",
+      "waveform_url": "/waveforms/Bass_Drop_Future.json",
+      "user_id": "2",
+      "is_public": true,
+      "download_count": 456,
+      "favorite_count": 101
+    }
+  ],
+  "packs": [
+    {
+      "id": "1",
+      "title": "Dark Trap Essentials",
+      "artist": "Producer X",
+      "description": "The essential sounds for modern trap production.",
+      "cover_image_url": "/images/pack1.jpg",
+      "genre": "Trap",
+      "bpm": "140-160",
+      "tags": ["trap", "dark", "essentials"],
+      "user_id": "1",
+      "is_public": true,
+      "download_count": 1234,
+      "favorite_count": 567
+    },
+    {
+      "id": "2",
+      "title": "Lo-Fi Hip Hop Vibes",
+      "artist": "Chill Beats",
+      "description": "A collection of chill, lo-fi hip hop sounds.",
+      "cover_image_url": "/images/pack2.jpg",
+      "genre": "Lo-Fi",
+      "bpm": "80-100",
+      "tags": ["lo-fi", "hip hop", "chill"],
+      "user_id": "3",
+      "is_public": true,
+      "download_count": 2345,
+      "favorite_count": 678
+    },
+    {
+      "id": "3",
+      "title": "Future Bass Pack",
+      "artist": "Synth Master",
+      "description": "A complete toolkit for creating future bass tracks.",
+      "cover_image_url": "/images/pack3.jpg",
+      "genre": "Future Bass",
+      "bpm": "128-140",
+      "tags": ["future bass", "synth", "melodic"],
+      "user_id": "2",
+      "is_public": true,
+      "download_count": 3456,
+      "favorite_count": 789
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "username": "producerx",
+      "email": "producerx@example.com",
+      "display_name": "Producer X",
+      "avatar_url": "/avatars/user1.png",
+      "is_pro": true
+    },
+    {
+      "id": "2",
+      "username": "synthmaster",
+      "email": "synthmaster@example.com",
+      "display_name": "Synth Master",
+      "avatar_url": "/avatars/user2.png",
+      "is_pro": false
+    },
+    {
+      "id": "3",
+      "username": "chillbeats",
+      "email": "chillbeats@example.com",
+      "display_name": "Chill Beats",
+      "avatar_url": "/avatars/user3.png",
+      "is_pro": true
+    }
+  ],
+  "playlists": [],
+  "analytics": {
+    "totalSamples": 2847,
+    "totalDownloads": 1234,
+    "totalFavorites": 456,
+    "recentActivity": []
+  }
+}
