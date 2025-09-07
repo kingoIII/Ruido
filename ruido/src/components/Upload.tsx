@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import apiService from '@/services/api'
 
 interface UploadFile {
   id: string
@@ -80,30 +81,33 @@ const Upload: React.FC = () => {
     ))
   }
 
-  const simulateUpload = (id: string) => {
-    setFiles(prev => prev.map(file => 
-      file.id === id ? { ...file, status: 'uploading' as const } : file
-    ))
-
-    const interval = setInterval(() => {
-      setFiles(prev => prev.map(file => {
-        if (file.id === id && file.status === 'uploading') {
-          const newProgress = Math.min(file.progress + Math.random() * 20, 100)
-          if (newProgress >= 100) {
-            clearInterval(interval)
-            return { ...file, progress: 100, status: 'completed' as const }
-          }
-          return { ...file, progress: newProgress }
-        }
-        return file
-      }))
-    }, 500)
+  const uploadFile = async (id: string) => {
+    const target = files.find(f => f.id === id)
+    if (!target) return
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'uploading', progress: 0 } : f))
+    try {
+      await apiService.uploadSample(target.file, {
+        title: target.metadata?.title || target.file.name,
+        artist: target.metadata?.artist || '',
+        genre: target.metadata?.genre || '',
+        bpm: Number(target.metadata?.bpm) || undefined,
+        key: target.metadata?.key,
+        tags: target.metadata?.tags?.split(',').map(t => t.trim()).filter(Boolean),
+        description: target.metadata?.description,
+      }, (p) => {
+        setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: p.progress } : f))
+      })
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'completed', progress: 100 } : f))
+    } catch (err) {
+      console.error('Upload failed', err)
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error' } : f))
+    }
   }
 
   const uploadAll = () => {
     files.forEach(file => {
       if (file.status === 'pending') {
-        simulateUpload(file.id)
+        uploadFile(file.id)
       }
     })
   }
@@ -171,61 +175,61 @@ const Upload: React.FC = () => {
       {files.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Files to Upload</h2>
-          {files.map((uploadFile) => (
-            <Card key={uploadFile.id} className="bg-gray-900 border-gray-800">
+          {files.map((fileItem) => (
+            <Card key={fileItem.id} className="bg-gray-900 border-gray-800">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <FileAudio className="w-5 h-5 text-purple-500" />
                     <div>
-                      <CardTitle className="text-lg text-white">{uploadFile.file.name}</CardTitle>
+                      <CardTitle className="text-lg text-white">{fileItem.file.name}</CardTitle>
                       <p className="text-sm text-gray-400">
-                        {(uploadFile.file.size / 1024 / 1024).toFixed(2)} MB
+                        {(fileItem.file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {uploadFile.status === 'completed' && (
+                    {fileItem.status === 'completed' && (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     )}
-                    {uploadFile.status === 'error' && (
+                    {fileItem.status === 'error' && (
                       <AlertCircle className="w-5 h-5 text-red-500" />
                     )}
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => removeFile(uploadFile.id)}
+                      onClick={() => removeFile(fileItem.id)}
                       className="text-gray-400 hover:text-white"
                     >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-                {uploadFile.status === 'uploading' && (
-                  <Progress value={uploadFile.progress} className="mt-2" />
+                {fileItem.status === 'uploading' && (
+                  <Progress value={fileItem.progress} className="mt-2" />
                 )}
               </CardHeader>
-              
+
               <CardContent className="pt-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor={`title-${uploadFile.id}`} className="text-gray-400">Title</Label>
+                      <Label htmlFor={`title-${fileItem.id}`} className="text-gray-400">Title</Label>
                       <Input
-                        id={`title-${uploadFile.id}`}
-                        value={uploadFile.metadata?.title || ''}
-                        onChange={(e) => updateMetadata(uploadFile.id, 'title', e.target.value)}
+                        id={`title-${fileItem.id}`}
+                        value={fileItem.metadata?.title || ''}
+                        onChange={(e) => updateMetadata(fileItem.id, 'title', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                         placeholder="Sample title"
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor={`artist-${uploadFile.id}`} className="text-gray-400">Artist</Label>
+                      <Label htmlFor={`artist-${fileItem.id}`} className="text-gray-400">Artist</Label>
                       <Input
-                        id={`artist-${uploadFile.id}`}
-                        value={uploadFile.metadata?.artist || ''}
-                        onChange={(e) => updateMetadata(uploadFile.id, 'artist', e.target.value)}
+                        id={`artist-${fileItem.id}`}
+                        value={fileItem.metadata?.artist || ''}
+                        onChange={(e) => updateMetadata(fileItem.id, 'artist', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                         placeholder="Artist name"
                       />
@@ -233,32 +237,32 @@ const Upload: React.FC = () => {
                     
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label htmlFor={`bpm-${uploadFile.id}`} className="text-gray-400">BPM</Label>
+                        <Label htmlFor={`bpm-${fileItem.id}`} className="text-gray-400">BPM</Label>
                         <Input
-                          id={`bpm-${uploadFile.id}`}
-                          value={uploadFile.metadata?.bpm || ''}
-                          onChange={(e) => updateMetadata(uploadFile.id, 'bpm', e.target.value)}
+                          id={`bpm-${fileItem.id}`}
+                          value={fileItem.metadata?.bpm || ''}
+                          onChange={(e) => updateMetadata(fileItem.id, 'bpm', e.target.value)}
                           className="bg-gray-800 border-gray-700 text-white"
                           placeholder="120"
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`key-${uploadFile.id}`} className="text-gray-400">Key</Label>
+                        <Label htmlFor={`key-${fileItem.id}`} className="text-gray-400">Key</Label>
                         <Input
-                          id={`key-${uploadFile.id}`}
-                          value={uploadFile.metadata?.key || ''}
-                          onChange={(e) => updateMetadata(uploadFile.id, 'key', e.target.value)}
+                          id={`key-${fileItem.id}`}
+                          value={fileItem.metadata?.key || ''}
+                          onChange={(e) => updateMetadata(fileItem.id, 'key', e.target.value)}
                           className="bg-gray-800 border-gray-700 text-white"
                           placeholder="C"
                         />
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor={`genre-${uploadFile.id}`} className="text-gray-400">Genre</Label>
-                      <Select onValueChange={(value) => updateMetadata(uploadFile.id, 'genre', value)}>
+                      <Label htmlFor={`genre-${fileItem.id}`} className="text-gray-400">Genre</Label>
+                      <Select value={fileItem.metadata?.genre} onValueChange={(value) => updateMetadata(fileItem.id, 'genre', value)}>
                         <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                           <SelectValue placeholder="Select genre" />
                         </SelectTrigger>
@@ -273,24 +277,24 @@ const Upload: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`tags-${uploadFile.id}`} className="text-gray-400">Tags</Label>
+                      <Label htmlFor={`tags-${fileItem.id}`} className="text-gray-400">Tags</Label>
                       <Input
-                        id={`tags-${uploadFile.id}`}
-                        value={uploadFile.metadata?.tags || ''}
-                        onChange={(e) => updateMetadata(uploadFile.id, 'tags', e.target.value)}
+                        id={`tags-${fileItem.id}`}
+                        value={fileItem.metadata?.tags || ''}
+                        onChange={(e) => updateMetadata(fileItem.id, 'tags', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white"
                         placeholder="kick, dark, heavy"
                       />
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`description-${uploadFile.id}`} className="text-gray-400">Description</Label>
+                      <Label htmlFor={`description-${fileItem.id}`} className="text-gray-400">Description</Label>
                       <Textarea
-                        id={`description-${uploadFile.id}`}
-                        value={uploadFile.metadata?.description || ''}
-                        onChange={(e) => updateMetadata(uploadFile.id, 'description', e.target.value)}
+                        id={`description-${fileItem.id}`}
+                        value={fileItem.metadata?.description || ''}
+                        onChange={(e) => updateMetadata(fileItem.id, 'description', e.target.value)}
                         className="bg-gray-800 border-gray-700 text-white resize-none"
                         placeholder="Describe your sample..."
                         rows={2}
@@ -298,11 +302,11 @@ const Upload: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
-                {uploadFile.status === 'pending' && (
+
+                {fileItem.status === 'pending' && (
                   <div className="mt-4 flex justify-end">
                     <Button
-                      onClick={() => simulateUpload(uploadFile.id)}
+                      onClick={() => uploadFile(fileItem.id)}
                       className="bg-purple-600 hover:bg-purple-700"
                     >
                       <UploadIcon className="w-4 h-4 mr-2" />

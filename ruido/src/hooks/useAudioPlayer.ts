@@ -81,7 +81,9 @@ export const useAudioPlayer = () => {
     if (!audioRef.current) return
 
     try {
-      audioRef.current.src = sample.audioUrl
+      // Support both camelCase and snake_case property names
+      const src = (sample as any).audioUrl || (sample as any).audio_url
+      audioRef.current.src = src
       await audioRef.current.load()
       
       setPlayerState(prev => ({

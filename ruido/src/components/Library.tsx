@@ -1,81 +1,57 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Play, Download, Heart, MoreHorizontal, Filter, Grid, List, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
+import apiService from '@/services/api'
+import { AudioSample } from '@/types'
+import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext'
 
 const Library: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  
-  const samples = [
-    {
-      id: 1,
-      name: 'Dark_Trap_Kick_01.wav',
-      artist: 'Producer X',
-      duration: '0:03',
-      bpm: 140,
-      key: 'Am',
-      genre: 'Trap',
-      tags: ['kick', 'dark', 'heavy'],
-      waveform: '/api/placeholder/200/60'
-    },
-    {
-      id: 2,
-      name: 'Synth_Lead_Melody.wav',
-      artist: 'Synth Master',
-      duration: '0:08',
-      bpm: 128,
-      key: 'C',
-      genre: 'Future Bass',
-      tags: ['synth', 'lead', 'melody'],
-      waveform: '/api/placeholder/200/60'
-    },
-    {
-      id: 3,
-      name: 'Lo_Fi_Drum_Loop.wav',
-      artist: 'Chill Beats',
-      duration: '0:04',
-      bpm: 85,
-      key: '-',
-      genre: 'Lo-Fi',
-      tags: ['drums', 'loop', 'chill'],
-      waveform: '/api/placeholder/200/60'
-    },
-    {
-      id: 4,
-      name: 'Bass_Drop_Heavy.wav',
-      artist: 'Bass King',
-      duration: '0:05',
-      bpm: 150,
-      key: 'F#m',
-      genre: 'Dubstep',
-      tags: ['bass', 'drop', 'heavy'],
-      waveform: '/api/placeholder/200/60'
-    },
-    {
-      id: 5,
-      name: 'Ambient_Pad_Warm.wav',
-      artist: 'Atmosphere',
-      duration: '0:12',
-      bpm: 120,
-      key: 'Dm',
-      genre: 'Ambient',
-      tags: ['pad', 'ambient', 'warm'],
-      waveform: '/api/placeholder/200/60'
-    },
-    {
-      id: 6,
-      name: 'Vocal_Chop_Female.wav',
-      artist: 'Voice Lab',
-      duration: '0:02',
-      bpm: 130,
-      key: 'G',
-      genre: 'Pop',
-      tags: ['vocal', 'chop', 'female'],
-      waveform: '/api/placeholder/200/60'
+  const [samples, setSamples] = useState<AudioSample[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [search, setSearch] = useState('')
+  const [genre, setGenre] = useState<string | undefined>()
+  const [bpmRange, setBpmRange] = useState<string | undefined>()
+  const [keyFilter, setKeyFilter] = useState<string | undefined>()
+  const { play } = useAudioPlayerContext()
+
+  useEffect(() => {
+    const fetchSamples = async () => {
+      try {
+        const filters: any = {}
+        if (search) filters.query = search
+        if (genre && genre !== 'all') filters.genre = genre
+        if (keyFilter && keyFilter !== 'all') filters.key = keyFilter
+        if (bpmRange && bpmRange !== 'all') {
+          if (bpmRange === 'slow') {
+            filters.bpmMin = 60
+            filters.bpmMax = 100
+          } else if (bpmRange === 'medium') {
+            filters.bpmMin = 100
+            filters.bpmMax = 140
+          } else if (bpmRange === 'fast') {
+            filters.bpmMin = 140
+          }
+        }
+        const data = await apiService.getSamples(filters, page, 12)
+        setSamples(data.data)
+        setTotalPages(data.pagination.totalPages)
+      } catch (err) {
+        console.error('Failed to load samples', err)
+      }
     }
-  ]
+    fetchSamples()
+  }, [page, search, genre, bpmRange, keyFilter])
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -88,6 +64,8 @@ const Library: React.FC = () => {
             <Input
               type="text"
               placeholder="Search library..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               className="pl-10 w-64 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
             />
           </div>
@@ -118,7 +96,7 @@ const Library: React.FC = () => {
 
       {/* Filters */}
       <div className="flex items-center space-x-4">
-        <Select>
+        <Select value={genre} onValueChange={(v) => { setGenre(v); setPage(1) }}>
           <SelectTrigger className="w-32 bg-gray-800 border-gray-700 text-white">
             <SelectValue placeholder="Genre" />
           </SelectTrigger>
@@ -131,8 +109,8 @@ const Library: React.FC = () => {
             <SelectItem value="ambient">Ambient</SelectItem>
           </SelectContent>
         </Select>
-        
-        <Select>
+
+        <Select value={bpmRange} onValueChange={(v) => { setBpmRange(v); setPage(1) }}>
           <SelectTrigger className="w-32 bg-gray-800 border-gray-700 text-white">
             <SelectValue placeholder="BPM" />
           </SelectTrigger>
@@ -143,17 +121,17 @@ const Library: React.FC = () => {
             <SelectItem value="fast">140+</SelectItem>
           </SelectContent>
         </Select>
-        
-        <Select>
+
+        <Select value={keyFilter} onValueChange={(v) => { setKeyFilter(v); setPage(1) }}>
           <SelectTrigger className="w-32 bg-gray-800 border-gray-700 text-white">
             <SelectValue placeholder="Key" />
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-700">
             <SelectItem value="all">All Keys</SelectItem>
-            <SelectItem value="c">C</SelectItem>
-            <SelectItem value="dm">Dm</SelectItem>
-            <SelectItem value="am">Am</SelectItem>
-            <SelectItem value="g">G</SelectItem>
+            <SelectItem value="C">C</SelectItem>
+            <SelectItem value="Dm">Dm</SelectItem>
+            <SelectItem value="Am">Am</SelectItem>
+            <SelectItem value="G">G</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -170,6 +148,7 @@ const Library: React.FC = () => {
                     <Button
                       size="icon"
                       className="bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+                      onClick={() => play(sample)}
                     >
                       <Play className="w-6 h-6 text-white" />
                     </Button>
@@ -178,24 +157,24 @@ const Library: React.FC = () => {
                     <div className="h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded opacity-60" />
                   </div>
                 </div>
-                
-                <h3 className="font-semibold text-white mb-1 truncate">{sample.name}</h3>
+
+                <h3 className="font-semibold text-white mb-1 truncate">{sample.filename}</h3>
                 <p className="text-sm text-gray-400 mb-2">{sample.artist}</p>
-                
+
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <span>{sample.duration}</span>
+                  <span>{formatDuration(sample.duration)}</span>
                   <span>{sample.bpm} BPM</span>
                   <span>{sample.key}</span>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {sample.tags.slice(0, 2).map((tag) => (
+                  {sample.tags?.slice(0, 2).map((tag) => (
                     <span key={tag} className="px-2 py-1 bg-gray-800 text-xs text-gray-400 rounded">
                       {tag}
                     </span>
                   ))}
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
                     <Download className="w-4 h-4 mr-2" />
@@ -221,14 +200,14 @@ const Library: React.FC = () => {
               {samples.map((sample) => (
                 <div key={sample.id} className="flex items-center justify-between p-4 hover:bg-gray-800/50 transition-colors">
                   <div className="flex items-center space-x-4 flex-1">
-                    <Button size="icon" variant="ghost" className="text-purple-500 hover:text-purple-400">
+                    <Button size="icon" variant="ghost" className="text-purple-500 hover:text-purple-400" onClick={() => play(sample)}>
                       <Play className="w-4 h-4" />
                     </Button>
                     <div className="flex-1">
-                      <p className="font-medium text-white">{sample.name}</p>
+                      <p className="font-medium text-white">{sample.filename}</p>
                       <p className="text-sm text-gray-400">{sample.artist} • {sample.genre}</p>
                     </div>
-                    <div className="text-sm text-gray-400 w-20">{sample.duration}</div>
+                    <div className="text-sm text-gray-400 w-20">{formatDuration(sample.duration)}</div>
                     <div className="text-sm text-gray-400 w-16">{sample.bpm} BPM</div>
                     <div className="text-sm text-gray-400 w-12">{sample.key}</div>
                   </div>
@@ -249,6 +228,19 @@ const Library: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Pagination */}
+      <div className="flex justify-center items-center space-x-4 mt-6">
+        <Button variant="outline" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+          className="border-gray-700 text-gray-400">
+          Previous
+        </Button>
+        <span className="text-gray-400">Page {page} of {totalPages}</span>
+        <Button variant="outline" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
+          className="border-gray-700 text-gray-400">
+          Next
+        </Button>
+      </div>
     </div>
   )
 }

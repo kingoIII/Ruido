@@ -151,45 +151,27 @@ const ParticleField: React.FC<{ audioData: number[] }> = ({ audioData }) => {
 }
 
 const AudioVisualizer: React.FC = () => {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(180) // 3 minutes
-  const [volume, setVolume] = useState([75])
+  const { playerState, togglePlayPause, playNext, playPrevious, seek, setVolume: setPlayerVolume, getFrequencyData } = useAudioPlayerContext()
   const [visualizerType, setVisualizerType] = useState('spectrum')
-  
-  // Simulate audio data
   const [audioData, setAudioData] = useState<number[]>(Array(64).fill(0))
-  
+  const [volume, setVolume] = useState([playerState.volume * 100])
+
+  useEffect(() => setVolume([playerState.volume * 100]), [playerState.volume])
+
   useEffect(() => {
     let animationId: number
-    
-    if (isPlaying) {
-      const animate = () => {
-        // Simulate audio frequency data
-        const newData = Array.from({ length: 64 }, (_, i) => {
-          const time = Date.now() * 0.001
-          const frequency = i / 64
-          return Math.abs(Math.sin(time * 2 + frequency * 10) * Math.cos(time * 0.5 + frequency * 5)) * 
-                 (0.5 + Math.random() * 0.5)
-        })
-        setAudioData(newData)
-        
-        setCurrentTime(prev => {
-          const next = prev + 0.1
-          return next >= duration ? 0 : next
-        })
-        
-        animationId = requestAnimationFrame(animate)
+    const animate = () => {
+      const data = getFrequencyData()
+      if (data.length) {
+        setAudioData(Array.from(data).slice(0, 64).map(v => v / 255))
       }
+      animationId = requestAnimationFrame(animate)
+    }
+    if (playerState.isPlaying) {
       animate()
     }
-    
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId)
-      }
-    }
-  }, [isPlaying, duration])
+    return () => cancelAnimationFrame(animationId)
+  }, [playerState.isPlaying, getFrequencyData])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -277,45 +259,47 @@ const AudioVisualizer: React.FC = () => {
           {/* Track Info */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Dark Trap Beat</h3>
-              <p className="text-sm text-gray-400">Producer X • 140 BPM • Am</p>
+              <h3 className="text-lg font-semibold text-white">{playerState.currentSample?.filename || 'No Track'}</h3>
+              {playerState.currentSample && (
+                <p className="text-sm text-gray-400">{playerState.currentSample.artist} • {playerState.currentSample.bpm} BPM • {playerState.currentSample.key}</p>
+              )}
             </div>
             <div className="text-sm text-gray-400">
-              {formatTime(currentTime)} / {formatTime(duration)}
+              {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
             </div>
           </div>
 
           {/* Progress Bar */}
           <div className="mb-6">
             <Slider
-              value={[currentTime]}
-              max={duration}
+              value={[playerState.currentTime]}
+              max={playerState.duration}
               step={0.1}
               className="w-full"
-              onValueChange={(value) => setCurrentTime(value[0])}
+              onValueChange={(value) => seek(value[0])}
             />
           </div>
 
           {/* Controls */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white">
+              <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white" onClick={playPrevious}>
                 <SkipBack className="w-5 h-5" />
               </Button>
-              
+
               <Button
                 size="icon"
                 className="bg-purple-600 hover:bg-purple-700 w-12 h-12"
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={togglePlayPause}
               >
-                {isPlaying ? (
+                {playerState.isPlaying ? (
                   <Pause className="w-6 h-6" />
                 ) : (
                   <Play className="w-6 h-6 ml-1" />
                 )}
               </Button>
-              
-              <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white">
+
+              <Button size="icon" variant="ghost" className="text-gray-400 hover:text-white" onClick={playNext}>
                 <SkipForward className="w-5 h-5" />
               </Button>
             </div>
@@ -327,7 +311,7 @@ const AudioVisualizer: React.FC = () => {
                 max={100}
                 step={1}
                 className="w-24"
-                onValueChange={setVolume}
+                onValueChange={(v) => { setVolume(v); setPlayerVolume(v[0] / 100) }}
               />
             </div>
           </div>

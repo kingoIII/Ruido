@@ -91,6 +91,7 @@ pnpm run dev
 - `pnpm run build` - Build for production
 - `pnpm run preview` - Preview production build
 - `pnpm run lint` - Run ESLint
+- `pnpm run mock:api` - Start local JSON server using `db.json`
 
 ## 🔧 Backend Integration
 
