@@ -1,45 +1,46 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Play, Download, Heart, MoreHorizontal, TrendingUp, Clock, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import apiService from '@/services/api'
+import { AudioPack, AudioSample } from '@/types'
+import { useAudioPlayerContext } from '@/contexts/AudioPlayerContext'
 
 const Dashboard: React.FC = () => {
-  const featuredPacks = [
-    {
-      id: 1,
-      title: 'Dark Trap Essentials',
-      artist: 'Producer X',
-      samples: 24,
-      image: '/api/placeholder/300/200',
-      genre: 'Trap',
-      bpm: '140-160'
-    },
-    {
-      id: 2,
-      title: 'Lo-Fi Hip Hop Vibes',
-      artist: 'Chill Beats',
-      samples: 18,
-      image: '/api/placeholder/300/200',
-      genre: 'Lo-Fi',
-      bpm: '80-100'
-    },
-    {
-      id: 3,
-      title: 'Future Bass Pack',
-      artist: 'Synth Master',
-      samples: 32,
-      image: '/api/placeholder/300/200',
-      genre: 'Future Bass',
-      bpm: '128-140'
-    }
-  ]
+  const [featuredPacks, setFeaturedPacks] = useState<AudioPack[]>([])
+  const [recentSamples, setRecentSamples] = useState<AudioSample[]>([])
+  const [stats, setStats] = useState({ totalSamples: 0, totalDownloads: 0, totalFavorites: 0 })
+  const { play } = useAudioPlayerContext()
 
-  const recentSamples = [
-    { id: 1, name: 'Dark_Kick_01.wav', duration: '0:03', bpm: 140, key: 'Am' },
-    { id: 2, name: 'Synth_Lead_Melody.wav', duration: '0:08', bpm: 128, key: 'C' },
-    { id: 3, name: 'Trap_Snare_Heavy.wav', duration: '0:02', bpm: 150, key: '-' },
-    { id: 4, name: 'Bass_Drop_Future.wav', duration: '0:05', bpm: 135, key: 'F#m' },
-  ]
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const packsRes = await apiService.getPacks({}, 1, 3)
+        setFeaturedPacks(packsRes.data)
+
+        const samplesRes = await apiService.getSamples({}, 1, 4)
+        setRecentSamples(samplesRes.data)
+
+        const analytics = await apiService.getAnalytics()
+        if (analytics.success) {
+          setStats({
+            totalSamples: analytics.data.totalSamples,
+            totalDownloads: analytics.data.totalDownloads,
+            totalFavorites: analytics.data.totalFavorites,
+          })
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data', err)
+      }
+    }
+    loadData()
+  }, [])
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="p-6 space-y-8">
@@ -51,29 +52,29 @@ const Dashboard: React.FC = () => {
             <Music className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">2,847</div>
+            <div className="text-2xl font-bold text-white">{stats.totalSamples}</div>
             <p className="text-xs text-gray-500">+12% from last month</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-400">Downloads</CardTitle>
             <Download className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">1,234</div>
+            <div className="text-2xl font-bold text-white">{stats.totalDownloads}</div>
             <p className="text-xs text-gray-500">+8% from last month</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gray-900 border-gray-800">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-400">Favorites</CardTitle>
             <Heart className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">456</div>
+            <div className="text-2xl font-bold text-white">{stats.totalFavorites}</div>
             <p className="text-xs text-gray-500">+23% from last month</p>
           </CardContent>
         </Card>
@@ -104,7 +105,7 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-semibold text-white mb-1">{pack.title}</h3>
                 <p className="text-sm text-gray-400 mb-2">{pack.artist}</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{pack.samples} samples</span>
+                  <span>{pack.samples?.length || 0} samples</span>
                   <span>{pack.genre} • {pack.bpm} BPM</span>
                 </div>
                 <div className="flex items-center justify-between mt-3">
@@ -136,12 +137,12 @@ const Dashboard: React.FC = () => {
               {recentSamples.map((sample) => (
                 <div key={sample.id} className="flex items-center justify-between p-4 hover:bg-gray-800/50 transition-colors">
                   <div className="flex items-center space-x-4">
-                    <Button size="icon" variant="ghost" className="text-purple-500 hover:text-purple-400">
+                    <Button size="icon" variant="ghost" className="text-purple-500 hover:text-purple-400" onClick={() => play(sample)}>
                       <Play className="w-4 h-4" />
                     </Button>
                     <div>
-                      <p className="font-medium text-white">{sample.name}</p>
-                      <p className="text-sm text-gray-400">{sample.duration} • {sample.bpm} BPM • {sample.key}</p>
+                      <p className="font-medium text-white">{sample.filename}</p>
+                      <p className="text-sm text-gray-400">{formatDuration(sample.duration)} • {sample.bpm} BPM • {sample.key}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
