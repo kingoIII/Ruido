@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ruido
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ruido
+      - run: pnpm run lint
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm run test -- --run
+      - run: pnpm exec prisma validate
+      - run: pnpm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ruido
+          NEXTAUTH_SECRET: testsecret
+          STORAGE_ENDPOINT: https://example.com
+          STORAGE_BUCKET: test
+          STORAGE_REGION: auto
+          STORAGE_ACCESS_KEY: test
+          STORAGE_SECRET_KEY: test
