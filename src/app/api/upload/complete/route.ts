@@ -81,6 +81,20 @@ async function probeAudioMetadata(url: string): Promise<AudioMetadata> {
 
     return {
       duration: numericDuration,
+    }
+
+    for (const stream of data.streams ?? []) {
+      if (stream.tags) {
+        tagCandidates.push(stream.tags.BPM, stream.tags.bpm, stream.tags.TBPM);
+        keyCandidates.push(stream.tags.initial_key, stream.tags.KEY, stream.tags.key);
+      }
+    }
+
+    const bpmCandidate = tagCandidates.map(parseBpm).find((value) => value !== null) ?? null;
+    const keyCandidate = keyCandidates.map(normalizeKey).find((value) => value !== null) ?? null;
+
+    return {
+      duration: duration && Number.isFinite(duration) ? Math.round(duration) : null,
       bpm: bpmCandidate,
       key: keyCandidate,
     };
@@ -212,6 +226,36 @@ export async function POST(req: Request) {
         coverUrl,
         waveform,
         tagJoins: tagJoinData.length ? { create: tagJoinData } : undefined,
+  const metadata = await probeAudioMetadata(audioUrl);
+  const duration = metadata.duration ?? 1;
+
+  const normalizedTags = normalizeTags(parsed.data.tags);
+
+  const tagRecords = await Promise.all(
+    normalizedTags.map((tag) =>
+      prisma.tag.upsert({
+        where: { name: tag },
+        update: {},
+        create: { id: randomUUID(), name: tag },
+      })
+    )
+  );
+
+  const track = await prisma.track.create({
+    data: {
+      id: randomUUID(),
+      profileId,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      license: parsed.data.license,
+      durationSec: duration,
+      bpm: parsed.data.bpm ?? metadata.bpm ?? undefined,
+      key: parsed.data.key ?? metadata.key ?? undefined,
+      audioUrl,
+      coverUrl,
+      waveform: generateWaveform(),
+      tagJoins: {
+        create: tagRecords.map((tag) => ({ tagId: tag.id })),
       },
       include: {
         profile: true,
