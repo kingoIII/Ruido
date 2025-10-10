@@ -10,18 +10,31 @@ interface AudioPlayerProps {
   src: string;
   waveform?: number[];
   trackId?: string;
+  durationSec?: number;
 }
 
-export function AudioPlayer({ src, waveform, trackId }: AudioPlayerProps) {
+export function AudioPlayer({ src, waveform, trackId, durationSec }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(durationSec ?? 0);
+
+  useEffect(() => {
+    if (typeof durationSec === "number") {
+      setDuration(durationSec);
+    }
+  }, [durationSec]);
 
   useEffect(() => {
     const audio = new Audio(src);
     audioRef.current = audio;
-    const onLoaded = () => setDuration(audio.duration ?? 0);
+    setProgress(0);
+    setIsPlaying(false);
+    const onLoaded = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration);
+      }
+    };
     const onTime = () => setProgress(audio.currentTime);
     const onEnded = () => setIsPlaying(false);
 

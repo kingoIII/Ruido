@@ -30,8 +30,10 @@ export default function UploadForm() {
   const [tags, setTags] = useState<string[]>([]);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isUploading, setIsUploading] = useState(false);
+  const [isNavigating, startTransition] = useTransition();
   const router = useRouter();
+  const isBusy = isUploading || isNavigating;
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (!audioFile) {
@@ -39,10 +41,12 @@ export default function UploadForm() {
       return;
     }
 
+    const toastId = toast.loading("Preparing upload...");
+    setIsUploading(true);
     try {
       const normalized = normalizeTags(tags);
       if (normalized.length > 12) {
-        toast.error("Maximum 12 tags");
+        toast.error("Maximum 12 tags", { id: toastId });
         return;
       }
       const response = await fetch("/api/upload/create", {
@@ -60,6 +64,7 @@ export default function UploadForm() {
       }
 
       const presign = await response.json();
+      toast.loading("Uploading files...", { id: toastId });
       await Promise.all([
         fetch(presign.audio.uploadUrl, { method: "PUT", headers: { "Content-Type": audioFile.type }, body: audioFile }),
         coverFile
@@ -67,6 +72,7 @@ export default function UploadForm() {
           : Promise.resolve(),
       ]);
 
+      toast.loading("Finalizing track...", { id: toastId });
       const finalizeResponse = await fetch("/api/upload/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,14 +92,16 @@ export default function UploadForm() {
       }
 
       const payload = await finalizeResponse.json();
-      toast.success("Track uploaded");
+      toast.success("Track uploaded", { id: toastId });
       startTransition(() => {
         router.push(`/track/${payload.track.id}`);
         router.refresh();
       });
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId });
+    } finally {
+      setIsUploading(false);
     }
   });
 
@@ -174,8 +182,8 @@ export default function UploadForm() {
           </FormItem>
         </div>
 
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Uploading..." : "Upload"}
+        <Button type="submit" disabled={isBusy}>
+          {isBusy ? "Uploading..." : "Upload"}
         </Button>
       </form>
     </Form>

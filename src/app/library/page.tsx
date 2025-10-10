@@ -12,16 +12,19 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const tag = typeof searchParams.tag === "string" ? searchParams.tag : undefined;
   const license = typeof searchParams.license === "string" ? searchParams.license : undefined;
   const sort = typeof searchParams.sort === "string" ? (searchParams.sort as "newest" | "plays" | "likes") : undefined;
-  const page = Number(searchParams.page ?? "1");
+  const pageParam = Number(searchParams.page ?? "1");
+  const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+
+  const numberFormatter = new Intl.NumberFormat();
 
   const params = new URLSearchParams();
   if (query) params.set("query", query);
   if (tag) params.set("tag", tag);
   if (license) params.set("license", license);
   if (sort) params.set("sort", sort);
-  params.set("page", String(page));
+  params.set("page", String(currentPage));
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const response = await fetch(`${baseUrl}/api/tracks?${params.toString()}`, {
     next: { revalidate: 0 },
   });
@@ -61,7 +64,11 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             </div>
             <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
               <span>@{track.profile.handle}</span>
-              <span>{track.plays} plays</span>
+              <div className="flex items-center gap-2">
+                <span>{numberFormatter.format(track.plays)} plays</span>
+                <span>•</span>
+                <span>{numberFormatter.format(track.likes)} likes</span>
+              </div>
             </div>
             <Link href={`/track/${track.id}`} className="mt-4 inline-flex text-sm text-primary">
               Listen →
@@ -75,7 +82,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             const pageParams = new URLSearchParams(params.toString());
             pageParams.set("page", String(pageNumber));
             const href = `/library?${pageParams.toString()}`;
-            const isActive = pageNumber === page;
+            const isActive = pageNumber === currentPage;
             return (
               <Link key={pageNumber} href={href} className={`text-sm ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                 {pageNumber}

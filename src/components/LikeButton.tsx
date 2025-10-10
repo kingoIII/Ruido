@@ -28,7 +28,19 @@ export function LikeButton({ trackId, initialLiked, initialCount }: LikeButtonPr
         setLiked(previousLiked);
         setCount(previousCount);
         toast.error("Unable to update like");
+        return;
       }
+
+      const payload: { liked: boolean; count: number } | undefined = await res.json().catch(() => undefined);
+      if (!payload) {
+        setLiked(previousLiked);
+        setCount(previousCount);
+        toast.error("Unable to update like");
+        return;
+      }
+
+      setLiked(payload.liked);
+      setCount(payload.count);
     });
   };
 

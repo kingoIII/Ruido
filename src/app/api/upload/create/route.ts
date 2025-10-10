@@ -5,6 +5,11 @@ import { authOptions } from "@/lib/auth";
 import { getPresignedUploadUrl } from "@/lib/storage";
 import { randomUUID } from "node:crypto";
 
+function sanitizeFileName(fileName: string) {
+  const sanitized = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "-");
+  return sanitized || "upload";
+}
+
 const audioMime = new Set(["audio/wav", "audio/x-wav", "audio/mpeg", "audio/flac", "audio/x-flac"]);
 const imageMime = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -43,19 +48,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported image type" }, { status: 415 });
   }
 
-  const audioKey = `profiles/${session.user.profileId}/tracks/${randomUUID()}-${parsed.data.audio.fileName}`;
-  const audioUrl = await getPresignedUploadUrl({ key: audioKey, contentType: parsed.data.audio.contentType });
+  try {
+    const audioKey = `profiles/${session.user.profileId}/tracks/${randomUUID()}-${sanitizeFileName(parsed.data.audio.fileName)}`;
+    const audioUrl = await getPresignedUploadUrl({ key: audioKey, contentType: parsed.data.audio.contentType });
 
-  const coverKey = parsed.data.cover
-    ? `profiles/${session.user.profileId}/covers/${randomUUID()}-${parsed.data.cover.fileName}`
-    : null;
+    const coverKey = parsed.data.cover
+      ? `profiles/${session.user.profileId}/covers/${randomUUID()}-${sanitizeFileName(parsed.data.cover.fileName)}`
+      : null;
 
-  const coverUrl = coverKey
-    ? await getPresignedUploadUrl({ key: coverKey, contentType: parsed.data.cover.contentType })
-    : null;
+    const coverUrl = coverKey
+      ? await getPresignedUploadUrl({ key: coverKey, contentType: parsed.data.cover.contentType })
+      : null;
 
-  return NextResponse.json({
-    audio: { uploadUrl: audioUrl, key: audioKey },
-    cover: coverKey && coverUrl ? { uploadUrl: coverUrl, key: coverKey } : undefined,
-  });
+    return NextResponse.json({
+      audio: { uploadUrl: audioUrl, key: audioKey },
+      cover: coverKey && coverUrl ? { uploadUrl: coverUrl, key: coverKey } : undefined,
+    });
+  } catch (error) {
+    console.error("Failed to create upload presign", error);
+    return NextResponse.json({ error: "Failed to prepare upload" }, { status: 500 });
+  }
 }

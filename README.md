@@ -4,13 +4,17 @@ A Next.js 14 application delivering the creator → upload → library → play 
 
 ## Getting started
 
-1. Install dependencies
+1. Install system dependencies
+
+Ensure [`ffmpeg`](https://ffmpeg.org/) is available on your PATH. On macOS you can run `brew install ffmpeg`; on Ubuntu/Debian use `sudo apt-get install ffmpeg`.
+
+2. Install project dependencies
 
 ```bash
 pnpm install
 ```
 
-2. Copy the environment template and fill in values
+3. Copy the environment template and fill in values
 
 ```bash
 cp .env.example .env
@@ -18,14 +22,14 @@ cp .env.example .env
 
 Populate `.env` with your database connection, NextAuth secrets, and S3-compatible storage credentials.
 
-3. Apply database schema and seed demo data
+4. Apply database schema and seed demo data
 
 ```bash
 pnpm exec prisma migrate deploy
 pnpm exec prisma db seed
 ```
 
-4. Run the development server
+5. Run the development server
 
 ```bash
 pnpm run dev

@@ -8,6 +8,13 @@ import { LicenseBadge } from "@/components/LicenseBadge";
 import { LikeButton } from "@/components/LikeButton";
 import Link from "next/link";
 
+function formatDuration(seconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(totalSeconds / 60);
+  const remaining = totalSeconds % 60;
+  return `${minutes}:${remaining.toString().padStart(2, "0")}`;
+}
+
 export default async function TrackPage({ params }: { params: { id: string } }) {
   const track = await prisma.track.findUnique({
     where: { id: params.id },
@@ -27,6 +34,8 @@ export default async function TrackPage({ params }: { params: { id: string } }) 
     ? track.likedBy.some((like) => like.profileId === session.user?.profileId)
     : false;
 
+  const formatter = new Intl.NumberFormat();
+
   return (
     <div className="container py-10">
       <div className="grid gap-10 lg:grid-cols-[280px_1fr]">
@@ -39,8 +48,25 @@ export default async function TrackPage({ params }: { params: { id: string } }) 
             </div>
           )}
           <LicenseBadge license={track.license} />
-          <LikeButton trackId={track.id} initialLiked={liked} initialCount={track.likes} />
-          <p className="text-sm text-muted-foreground">{track.plays.toString()} plays</p>
+          <LikeButton trackId={track.id} initialLiked={liked} initialCount={Number(track.likes)} />
+          <dl className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            <div>
+              <dt className="font-medium text-foreground">Plays</dt>
+              <dd>{formatter.format(Number(track.plays))}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-foreground">Duration</dt>
+              <dd>{formatDuration(track.durationSec)}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-foreground">BPM</dt>
+              <dd>{track.bpm ? formatter.format(track.bpm) : "—"}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-foreground">Key</dt>
+              <dd>{track.key ?? "—"}</dd>
+            </div>
+          </dl>
         </div>
         <div className="space-y-6">
           <div>
@@ -54,6 +80,7 @@ export default async function TrackPage({ params }: { params: { id: string } }) 
             src={track.audioUrl}
             waveform={Array.isArray(track.waveform) ? (track.waveform as number[]) : undefined}
             trackId={track.id}
+            durationSec={track.durationSec}
           />
           <div className="flex flex-wrap gap-2">
             {track.tagJoins.map((join) => (

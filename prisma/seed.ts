@@ -87,7 +87,7 @@ async function main() {
     );
 
     const created = await prisma.track.upsert({
-      where: { title: track.title },
+      where: { profileId_title: { profileId: profile.id, title: track.title } },
       update: {},
       create: {
         id: randomUUID(),
@@ -101,17 +101,24 @@ async function main() {
         audioUrl: `https://cdn.ruido.dev/demo/${track.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.mp3`,
         coverUrl: `https://images.ruido.dev/demo/${track.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.jpg`,
         waveform: Array.from({ length: 200 }, (_, i) => Number(Math.abs(Math.sin((i / 200) * Math.PI)).toFixed(3))),
-        tagJoins: {
-          createMany: {
-            data: tagRecords.map((tag) => ({ tagId: tag.id })),
-            skipDuplicates: true,
-          },
-        },
+        tagJoins:
+          tagRecords.length > 0
+            ? {
+                createMany: {
+                  data: tagRecords.map((tag) => ({ tagId: tag.id })),
+                  skipDuplicates: true,
+                },
+              }
+            : undefined,
       },
     });
 
-    const tagVectorSource = track.tags.join(" ");
-    await prisma.$executeRaw(Prisma.sql`UPDATE "Track" SET "tags" = to_tsvector('simple', ${tagVectorSource}) WHERE "id" = ${created.id}`);
+    const tagVectorSource = [track.title, track.description, track.tags.join(" ")]
+      .filter(Boolean)
+      .join(" ");
+    await prisma.$executeRaw(
+      Prisma.sql`UPDATE "Track" SET "tags" = to_tsvector('simple', ${tagVectorSource}) WHERE "id" = ${created.id}`
+    );
   }
 }
 
