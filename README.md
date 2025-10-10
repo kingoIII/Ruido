@@ -1,31 +1,62 @@
-#  ruido - The Future of Sound is Here
+# ruido platform
 
-**ruido** is a revolutionary platform for music producers, sound designers, and artists. Discover a universe of high-quality, royalty-free sounds, and take your productions to the next level with our futuristic, intuitive interface.
+A Next.js 14 application delivering the creator → upload → library → play loop with authentication, Prisma/Postgres, S3-compatible storage, search, and analytics.
 
-## 🚀 Experience the Power of ruido
+## Getting started
 
-- **Sleek, Modern Interface**: Our stunning dark theme, with vibrant purple accents, provides a focused, immersive environment for you to create your best work.
-- **Immersive 3D Audio Visualization**: See your sounds come to life with our real-time, 3D audio visualizer. It's not just a tool, it's an experience.
-- **Effortless Sample Management**: Upload, organize, and manage your personal sound library with ease. Our intuitive tools make it simple to find the perfect sound, every time.
-- **Vast Library of Sounds**: Browse and search our extensive library of audio samples and packs. With powerful filters and a lightning-fast search, you'll find the sounds you need in seconds.
-- **Seamless Audio Playback**: Audition sounds with our built-in audio player. Create playlists, loop your favorite sections, and keep your creative flow going.
-- **Responsive on All Devices**: Whether you're in the studio on your desktop, or on the go with your tablet or phone, **ruido** is ready when inspiration strikes.
+1. Install dependencies
 
-## 🎶 The Ultimate Sound Library for Modern Creators
+```bash
+npm install
+```
 
-**ruido** is more than just a sound library, it's a community of creators. We are dedicated to providing the best possible tools and sounds to help you realize your artistic vision.
+2. Copy the environment template and fill in values
 
-### What you can do with ruido:
+```bash
+cp .env.example .env
+```
 
-- **Discover Unique Sounds**: Find hidden gems in our constantly growing library of samples and packs.
-- **Organize Your Workflow**: Keep your personal sound collection organized and accessible.
-- **Visualize Your Music**: Gain a deeper understanding of your sounds with our stunning 3D visualizer.
-- **Create Anywhere**: With our mobile-friendly design, you can create music wherever you are.
+Populate `.env` with your database connection, NextAuth secrets, and S3-compatible storage credentials.
 
-## 🌟 Join the ruido Revolution
+3. Apply database schema and seed demo data
 
-We are constantly innovating and adding new features to make **ruido** the ultimate platform for music creators. Sign up today and experience the future of sound.
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
 
----
+4. Run the development server
 
-**© 2025 ruido. All Rights Reserved.**
+```bash
+npm run dev
+```
+
+Visit http://localhost:3000.
+
+### Available scripts
+
+- `npm run dev` – start Next.js in development mode.
+- `npm run build` – create a production build.
+- `npm run start` – run the production build.
+- `npm run lint` – run ESLint.
+- `npm run test` – execute Vitest unit tests.
+- `npm run test:e2e` – run Playwright end-to-end tests.
+- `npm run prisma:migrate` – deploy Prisma migrations.
+- `npm run prisma:generate` – regenerate the Prisma Client.
+- `npm run prisma:seed` – seed the database.
+
+## Project structure
+
+- `src/app` – Next.js app router pages and API routes.
+- `src/components` – UI and interactive components.
+- `src/lib` – utilities (Prisma client, auth, search helpers, storage, etc.).
+- `prisma` – Prisma schema, migrations, and seeds.
+- `tests` – Vitest unit tests and Playwright e2e specs.
+
+## CI
+
+GitHub Actions workflow `.github/workflows/ci.yml` checks formatting, runs linting, type checking, Prisma validation, unit tests, and a headless Next.js build.
+
+## Demo data
+
+The seed script provisions a demo creator profile with five futuristic tracks tagged for search. Use `demo@ruido.dev` to sign in via magic link.
